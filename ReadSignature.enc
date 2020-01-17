@@ -1,0 +1,38 @@
+package com.hfad.registration;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Context;
+import android.content.ContextWrapper;
+import android.content.Intent;
+import android.graphics.drawable.Drawable;
+import android.view.View;
+import android.os.Bundle;
+import android.widget.ImageView;
+import android.widget.Toast;
+
+import java.io.File;
+
+public class ReadSignature extends AppCompatActivity {
+
+    ImageView imageView;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.read_signature_layout);
+
+        Intent intent = getIntent();
+        imageView = findViewById(R.id.mySignImage);
+    }
+
+    public void showSignImage(View view){
+        ContextWrapper cw = new ContextWrapper(getApplicationContext());
+        File directory = cw.getDir("imageDir", Context.MODE_PRIVATE);
+        File file = new File(directory,"one"+".jpg");
+        if(file.toString().length()<0){
+            Toast.makeText(ReadSignature.this,"There is no signature "+directory.toString(), Toast.LENGTH_SHORT).show();
+        }
+        else
+        imageView.setImageDrawable(Drawable.createFromPath(file.toString()));
+    }
+}

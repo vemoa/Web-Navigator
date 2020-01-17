@@ -1,0 +1,116 @@
+package com.hfad.registration;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Context;
+import android.content.ContextWrapper;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.net.Uri;
+import android.os.Bundle;
+import android.provider.MediaStore;
+import android.util.Log;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.Toast;
+
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+//import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.UUID;
+
+public class UploadSignatureActivity extends AppCompatActivity {
+    StorageReference storageReference;
+    FirebaseStorage storage;
+    ImageView imageView;
+    Uri uri;
+    Bitmap bitmap;
+    ArrayList<String> str;
+    private static final int myRequestCode = 2;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_upload_signature);
+
+        imageView = findViewById(R.id.imageView);
+        storage = FirebaseStorage.getInstance();
+        storageReference = storage.getReference();
+    }
+
+    public void selectImageAction(View view){
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setType("image/*");
+        startActivityForResult(intent,myRequestCode);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == myRequestCode && resultCode == RESULT_OK && data != null && data.getData() != null) {
+
+            uri = data.getData();
+            try {
+                bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
+                imageView.setImageBitmap(bitmap);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+    }
+
+    public void nextPage(View view){
+        startActivity(new Intent(this,ReadSignature.class));
+    }
+
+    public void saveImage(View view){
+        ContextWrapper cw = new ContextWrapper(UploadSignatureActivity.this);
+        File directory = cw.getDir("imageDir", Context.MODE_PRIVATE);
+        File file = new File(directory,"one"+".jpg");
+        if(!file.exists()){
+            Log.d("path",file.toString());
+            FileOutputStream fos;
+            try{
+                fos = new FileOutputStream(file);
+                bitmap.compress(Bitmap.CompressFormat.JPEG,100,fos);
+                fos.flush();
+                fos.close();
+            }
+            catch(java.io.IOException e){
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void uploadImage(View view){
+    StorageReference filepath = storageReference.child("SignImage/"+ UUID.randomUUID().toString());
+    filepath.putFile(uri)
+            .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                    Toast.makeText(UploadSignatureActivity.this, "File uploaded successfully", Toast.LENGTH_SHORT).show();
+                }
+
+            })
+            .addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Toast.makeText(UploadSignatureActivity.this, "File not uploaded "+e.getMessage()+uri.toString(), Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+}
+
+
+//Earlier Fire base Permission was if request.auth != null.
